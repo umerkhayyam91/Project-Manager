@@ -22,7 +22,7 @@ app.post('/signup', async (req, res) => {
         const values = [user_uid, name, email, hashedPassword];
         const result = await client.query(query, values);
 
-        const user = result.rows[0];
+        // const user = result.rows[0];
         return res.json({
             status: "success",
             message: "User created successfully!"
@@ -34,5 +34,54 @@ app.post('/signup', async (req, res) => {
         })
     }
 })
+
+app.post('/login', async (req, res) => {
+    const { email, password } = req.body
+    if (!email || !password) {
+        return res.json({
+            status: "failure",
+            message: "please enter the required credentials!"
+        })
+    }
+    const query = 'SELECT * FROM users WHERE email = $1';
+    values = [email];
+    const result = await client.query(query, values)
+    const user = result.rows[0];
+    console.log(result);
+    if (!user) {
+        return res.json({
+            status: "failure",
+            message: "user not found!"
+        })
+    }
+    if (!email || !password) {
+        return res.json({
+            status: "failure",
+            message: "please enter the required credentials!"
+        })
+    }
+    try {
+        console.log(password);
+        console.log(user.password);
+        if (await bcrypt.compare(password, user.password)) {
+            res.json({
+                'status': 'failure',
+                'message': "login successful",
+            });
+
+        } else {
+            res.json({
+                'status': 'failure',
+                'message': "wrong password",
+            });
+        }
+    } catch (error) {
+        res.json({
+            'status': 'failure',
+            'message': error.message,
+        });
+    }
+
+});
 
 module.exports = app;
