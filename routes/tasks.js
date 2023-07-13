@@ -42,7 +42,7 @@ app.get('/', authenticateToken, async (req, res) => {
         const result = await client.query(query, value)
         const tasks = result.rows
         res.json(tasks)
-        
+
     } catch (error) {
         res.json({
             status: "failure",
@@ -54,22 +54,18 @@ app.get('/', authenticateToken, async (req, res) => {
 app.put('/:taskId', async (req, res) => {
     try {
         const taskId = req.params.taskId;
-        const { title, description, status, due_date } = req.body;
+        const { title, description, status, due_date } = req.body
 
         if (!title || !description || !status || !due_date) {
             return res.json({
                 status: "failure",
                 message: "Please enter all the required fields!"
-            });
+            })
         }
 
-        console.log('object');
         const query = 'UPDATE tasks SET title = $1, description = $2, status = $3, due_date = $4 WHERE task_uid = $5'
-        console.log('object');
         const values = [title, description, status, due_date, taskId];
-        console.log('object');
         const result = await client.query(query, values);
-        console.log('object');
         console.log(result)
 
         if (result.rowCount === 0) {
@@ -90,6 +86,36 @@ app.put('/:taskId', async (req, res) => {
     }
 })
 
+app.delete('/:taskId', async (req, res) => {
+    try {
+        const taskId = req.params.taskId;
+        if (!taskId) {
+            return res.json({
+                status: "failure",
+                message: "Invalid taskId provided!"
+            });
+        }
+        const query = 'DELETE FROM tasks WHERE task_uid = $1'
+        const values = [taskId];
+        const result = await client.query(query, values);
+        console.log(result)
+        if (result.rowCount === 0) {
+            return res.json({
+              status: "failure",
+              message: "Task not found!"
+            });
+          }
+        res.json({
+            status: "success",
+            message: "Task deleted successfully!"
+        });
+    } catch (error) {
+        res.json({
+            status: "failure",
+            message: error.message
+        });
+    }
 
+})
 
 module.exports = app;
