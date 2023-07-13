@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require("bcrypt")
+const jwt = require('jsonwebtoken')
+require("dotenv").config()
 
 const client = require('../db');
 app.use(express.json())
@@ -47,12 +49,11 @@ app.post('/login', async (req, res) => {
     const query = 'SELECT * FROM users WHERE email = $1';
     values = [email];
     const result = await client.query(query, values)
-    const user = result.rows[0];
-    console.log(result);
-    if (!user) {
+    const User = result.rows[0];
+    if (!User) {
         return res.json({
             status: "failure",
-            message: "user not found!"
+            message: "User not found!"
         })
     }
     if (!email || !password) {
@@ -62,13 +63,14 @@ app.post('/login', async (req, res) => {
         })
     }
     try {
-        console.log(password);
-        console.log(user.password);
-        if (await bcrypt.compare(password, user.password)) {
-            res.json({
-                'status': 'success',
-                'message': "login successful",
-            });
+
+        if (await bcrypt.compare(password, User.password)) {
+            const user = { id: User.user_uid }
+            console.log(User.user_uid);
+
+            const accessToken = generateAccessToken(user)
+            const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET)
+            res.json({ accessToken: accessToken, refreshToken: refreshToken })
 
         } else {
             res.json({
@@ -84,5 +86,9 @@ app.post('/login', async (req, res) => {
     }
 
 });
+
+function generateAccessToken(user) {
+    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET)
+}
 
 module.exports = app;
